@@ -7,7 +7,9 @@ import numpy as np
 from PIL import Image
 import winsound
 import math
-
+import sys
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QTextEdit, QLabel, QPushButton, QFileDialog
+from PyQt6.QtCore import Qt
 
 imgdir='DBDimg/'
 delay_degree = 0
@@ -30,6 +32,63 @@ hyperfocus=False
 red_sensitive=180
 focus_level=0
 
+class DeadByDaylightGUI(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        # 创建布局
+        layout = QVBoxLayout()
+
+        # 创建一个文本框用于输出信息
+        self.output_text = QTextEdit(self)
+        self.output_text.setReadOnly(True)
+        layout.addWidget(self.output_text)
+
+        # 创建一个标签用于显示按键说明
+        self.key_instructions = QLabel(self)
+        self.update_key_instructions()
+        layout.addWidget(self.key_instructions)
+
+        # 创建一个按钮用于打开文件夹
+
+
+        # 设置布局
+        self.setLayout(layout)
+
+        # 设置窗口属性
+        self.setWindowTitle('杀鸡QTE脚本 by: YuuDaChi')
+        self.setGeometry(300, 300, 400, 300)
+        self.show()
+
+    def update_key_instructions(self):
+        instructions = """
+        按键说明:
+        - F1: 切换键盘监听状态.
+        - Caps Lock: 切换脚本启用状态.
+        - 3: 切换到修机模式.
+        - 4: 切换到治疗模式.
+        - 5: 切换至挣扎模式.
+        - 6: 切换聚精会神状态.
+        - =: 增加延迟.
+        - -: 减少延迟.
+        - 注意，需通过再次按下3将聚精会神层数清空（当你炸鸡且没有按WASD的时候）
+        - 本脚本会自动检测无情风暴，但是如果你的CPU比较拉，那可能会导致打不中
+        - 注意，本脚本纯图片识别，在打QTE的时候不要将晃动屏幕；
+        - 如果遇到老杨导致QTE乱飞，建议手打，因为图片识别仅识别中央；
+        """
+        self.key_instructions.setText(instructions)
+
+    def open_screenshot_folder(self):
+        folder_path = QFileDialog.getExistingDirectory(self, 'Select Directory')
+        if folder_path:
+            self.output_text.append(f'Selected folder: {folder_path}')
+            # 在这里可以添加打开文件夹的逻辑
+            # 例如：os.startfile(folder_path) 或者其他方法来打开文件夹
+
+    def append_output(self, text):
+        self.output_text.append(text)
 
 def sleep(t):
     st = time.time()
@@ -563,11 +622,15 @@ def keyboard_callback(x):
             keyboard_switch=False
             toggle=False
             print('keyboard_switch:', keyboard_switch)
+            ex.append_output(f"键盘输入是否监听： {keyboard_switch}")
+
         else:
             winsound.Beep(350,500)
             keyboard_switch=True
             toggle=True
             print('keyboard_switch:', keyboard_switch)
+            ex.append_output(f"键盘输入是否监听： {keyboard_switch}")
+
     if not keyboard_switch: 
         return
     if x.name=='caps lock':
@@ -575,10 +638,12 @@ def keyboard_callback(x):
             winsound.Beep(200,500)
             toggle=False
             print('toggle:', toggle)
+            ex.append_output(f"脚本是否启动： {toggle}")
         else:
             winsound.Beep(350,500)
             toggle=True
             print('toggle:', toggle)
+            ex.append_output(f"脚本是否启动： {toggle}")
     
     if not toggle: 
         return
@@ -588,6 +653,7 @@ def keyboard_callback(x):
         toggle=True
         focus_level=0
         print('change to repair')
+        ex.append_output("切换至修机模式")
         winsound.Beep(262,500)
         speed_now=repair_speed
     if x.name=='4':
@@ -595,45 +661,49 @@ def keyboard_callback(x):
         focus_level=0
         winsound.Beep(300,500)
         print('change to heal')
+        ex.append_output("切换至治疗模式")
         speed_now=heal_speed
     if x.name=='5':
         toggle=True
         winsound.Beep(440,500)
         print('change to wiggle')
+        ex.append_output("切换至挣扎模式")
         speed_now=wiggle_speed
     if x.name=='6':
         if hyperfocus:
             winsound.Beep(200,500)
             hyperfocus=False
             print('hyperfocus disabled')
+            ex.append_output("聚精会神关闭")
         else:
             winsound.Beep(350,500)
             hyperfocus=True
             print('hyperfocus enabled')
+            ex.append_output("聚精会神启动")
     if x.name=='=':
         winsound.Beep(460,500)
         delay_pixel+=2
         print('delay_pixel:',delay_pixel)
+        ex.append_output(f"延迟： {delay_pixel}")
     if x.name=='-': 
         winsound.Beep(500,500)
         delay_pixel-=2
         print('delay_pixel:',delay_pixel)
+        ex.append_output(f"延迟： {delay_pixel}")
 
-        
 
-def main():
-    # cap_test()
-    
+
+if __name__ == "__main__":
     import os
+
     if not os.path.exists(imgdir):
         os.mkdir(imgdir)
     keyboard.on_press(keyboard_callback)
     threading.Thread(target=keyboard.wait)
+    app = QApplication(sys.argv)
+    ex = DeadByDaylightGUI()
+    sys.exit(app.exec())
     print('starting')
     driver()
 
-
-if __name__ == "__main__":
-    main()
-    
     
